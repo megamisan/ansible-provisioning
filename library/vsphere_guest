@@ -55,7 +55,7 @@ options:
   resource_pool:
     description:
       - The name of the resource_pool to create the VM in.
-    required: false
+    required: true
     default: None
   cluster:
     description:
@@ -389,7 +389,7 @@ def main():
             vcenter_hostname     = dict(required=True, type='str'),
             user                 = dict(required=True, type='str'),
             password             = dict(required=True, type='str'),
-            resource_pool        = dict(required=False, default=None, type='str'),
+            resource_pool        = dict(required=True, type='str'),
             cluster              = dict(required=False, default=None, type='str'),
             datacenter           = dict(required=True, type='str'),
             datastore            = dict(required=True, type='str'),
@@ -407,7 +407,6 @@ def main():
             guestosid            = dict(required=True, type='str'),
         ),
         supports_check_mode = False,
-        required_together = [ ['resource_pool','cluster'] ],
     )
 
     if not HAS_PYSPHERE:
@@ -505,19 +504,27 @@ def main():
     # Get resource pool managed reference
     # Requires that a cluster name be specified. 
     if resource_pool:
-        try:
-            cluster = [k for k,v in s.get_clusters().items() if v==cluster_name][0]
-        except IndexError, e:
-            s.disconnect()
-            module.fail_json(msg="Cannot find Cluster named: %s" % cluster_name)    
+        if cluster_name:
+            try:
+                cluster = [k for k,v in s.get_clusters().items() if v==cluster_name][0]
+            except IndexError, e:
+                s.disconnect()
+                module.fail_json(msg="Cannot find Cluster named: %s" % cluster_name)
             
-        try:
-            rpmor = [k for k,v in s.get_resource_pools(from_mor=cluster).items()
-                 if v == resource_pool][0]
-        except IndexError, e:
-            s.disconnect()
-            module.fail_json(msg="Cannot find Resource Pool named: %s" % resource_pool)    
-            
+            try:
+                rpmor = [k for k,v in s.get_resource_pools(from_mor=cluster).items()
+                     if v == resource_pool][0]
+            except IndexError, e:
+                s.disconnect()
+                module.fail_json(msg="Cannot find Resource Pool named: %s" % resource_pool)
+        else:
+            try:
+                rpmor = [k for k,v in s.get_resource_pools().items()
+                     if v == resource_pool][0]
+            except IndexError, e:
+                s.disconnect()
+                module.fail_json(msg="Cannot find Resource Pool named: %s" % resource_pool)
+
     else:
         rpmor = crprops.resourcePool._obj
     
