@@ -395,6 +395,7 @@ def main():
             datastore            = dict(required=True, type='str'),
             esxi_hostname        = dict(required=True, type='str'),
             power_on             = dict(required=False, default='no', type='bool'),
+            firmware             = dict(required=False, default="bios", choices=['bios', 'efi']),
             vm_name              = dict(required=True, type='str'),
             vm_memory_mb         = dict(required=False, default=1024),
             vm_num_cpus          = dict(required=False, default=1),
@@ -430,6 +431,7 @@ def main():
     vm_notes = module.params['vm_notes']
     vm_cdrom = module.params['vm_cdrom']
     vm_extra_config = module.params['vm_extra_config']
+    firmware = module.params['firmware']
     guestosid = module.params['guestosid']
 
 
@@ -563,6 +565,7 @@ def main():
     config.set_element_memoryMB(vm_memory_mb)
     config.set_element_numCPUs(vm_num_cpus)
     config.set_element_guestId(guestosid)
+    config.set_element_firmware(firmware)
     devices = []
     
     # Attach all the hardware we want to the VM spec.
